@@ -188,8 +188,11 @@ mtz_file {
 
   output_pdb_file.close()
 
-  phenix_refine_command = "phenix.refine %s %s strategy=rigid_body" % (output_mtz_file, output_pdb_file)
-  os.system(phenix_refine_command)
+  pdbtools_cmd = "phenix.pdbtools %s convert_to_isotropic=True set_b_iso=20.00 remove='not protein' output.file_name='coords_in_current_cell.pdb'"
+  os.system(pdbtools_cmd)
+
+  phenix_refine_cmd = "phenix.refine %s coords_in_current_cell.pdb strategy=rigid_body" % (output_mtz_file)
+  os.system(phenix_refine_cmd)
 
   os.chdir('..')
 
