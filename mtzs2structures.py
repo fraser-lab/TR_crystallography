@@ -169,7 +169,7 @@ mtz_file {
       cryst1
 
   cryst1_sg = space_group.rjust(11)
-  cryst1_line = "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s    \n"
+  cryst1_line = "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s    \n" % (uc_a, uc_b, uc_c, uc_al, uc_be, uc_ga, space_group)
 
   orig_pdb_file = open(isomorphous_input_pdb_fullpath, 'r')
   output_pdb_file_fullpath = os.path.join(cwd, "coords_in_current_cell.pdb")
