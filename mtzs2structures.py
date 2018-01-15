@@ -1,17 +1,19 @@
 #Script for copying a set of Rfree flags across multiple isomorphous data sets and
 #perform rigid-body refinement to initiate rebuild.
-#Usage: python mtzs2structures.py [isomorphous.pdb] [r_free.mtz]
+#Usage: libtbx.python mtzs2structures.py [isomorphous.pdb] [r_free.mtz]
 #Run from a directory containing all of the derivative MTZ files
 
 import os
 import sys
 import math
 import string
+from iotbx.reflection_file_reader import any_reflection_file
+import subprocess
 
 #Take command line input (isomorphous-ish PDB file and an MTZ file with desired FreeR_flags)
 #assess MTZ files
 #make a directory for each MTZ
-
+cwd = os.getcwd()
 isomorphous_input_pdb = sys.argv[1]
 isomorphous_input_pdb_fullpath = os.path.join(cwd, isomorphous_input_pdb)
 r_free_mtz = sys.argv[2]
@@ -43,30 +45,46 @@ for i, mtz_filename in enumerate(original_mtz_filenames):
 #set up phenix.refine for rigid body refinement and run
 
 for n, path in enumerate(dir_paths):
-  
+  print path
   os.chdir(path)
 
   cwd = os.getcwd()
 
-  xtriage_cmd = 'phenix.xtriage ./'+str(original_mtz_filenames[n])+'.mtz'
-  os.system(xtriage_cmd)
+  # xtriage_cmd = 'phenix.xtriage ../'+str(original_mtz_filenames[n])+'.mtz'
+  # os.system(xtriage_cmd)
+  hkl_file = any_reflection_file("../"+str(original_mtz_filenames[n])+'.mtz')
+  info = hkl_file.file_content()
+  xtals =info.crystals()
+  if len(xtals) > 1:
+    xtal = xtals[0]
+  else:
+    xtal =xtals
+  space_group = info.space_group_number()
+  unit_cell = xtal.unit_cell_parameters()
+  uc_a, uc_b, uc_c, uc_al, uc_be, uc_ga = unit_cell
 
-  xtriage_outfile = open('./logfile.log', 'r')
-  unit_cell_line = xtriage_outfile.readlines()[20]
-  unit_cell = unit_cell_line.split('=')[-1]
-  uc_a = unit_cell_line.split(' ')[-6]
-  uc_b = unit_cell_line.split(' ')[-5]
-  uc_c = unit_cell_line.split(' ')[-4]
-  uc_al = unit_cell_line.split(' ')[-3]
-  uc_be = unit_cell_line.split(' ')[-2]
-  uc_ga = unit_cell_line.split(' ')[-1]
+  uc_str = str(unit_cell)[1:-1]
 
-  space_group_line = xtriage_outfile.readlines()[21]
-  space_group = space_group_line.split('"')[-2]
+  # xtriage_outfile = open('./logfile.log', 'r')
+  # # unit_cell_line = xtriage_outfile.readlines()[20]
+  # for line in xtriage_outfile.readlines():
+  #   print line
+  # unit_cell = unit_cell_line.split('=')[-1]
+  # uc_a = unit_cell_line.split(' ')[-6]
+  # uc_b = unit_cell_line.split(' ')[-5]
+  # uc_c = unit_cell_line.split(' ')[-4]
+  # uc_al = unit_cell_line.split(' ')[-3]
+  # uc_be = unit_cell_line.split(' ')[-2]
+  # uc_ga = unit_cell_line.split(' ')[-1]
+
+  # space_group_line = xtriage_outfile.readlines()[21]
+  # space_group = space_group_line.split('"')[-2]
+
 
   input_refl_mtz_file = original_mtz_files[n]
   output_mtz_filename = original_mtz_filenames[n]+"_flags.mtz"
-  output_mtz_file = os.path.join(cwd, flags_mtz_filename)
+  # output_mtz_file = os.path.join(cwd, flags_mtz_filename)
+  output_mtz_file = os.path.join(cwd, output_mtz_filename)
 
   RFE_def_file_fullpath = os.path.join(cwd, "reflection_file_editor.def")
   RFE_def_file = open(RFE_def_file_fullpath, 'w')
@@ -96,8 +114,8 @@ mtz_file {
   exclude_reflection = None
   miller_array {
     file_name = %s
-    labels = IMEAN,SIGIMEAN
-    output_labels = IMEAN SIGIMEAN
+    labels = IOBS,SIGIOBS
+    output_labels = IOBS SIGIOBS
     column_root_label = None
     d_min = None
     d_max = None
@@ -157,19 +175,23 @@ mtz_file {
   }
 }
 
-""" % (unit_cell, space_group, output_mtz_file, input_refl_mtz_file, r_free_mtz_fullpath)
+""" % (uc_str, space_group, output_mtz_file, input_refl_mtz_file, r_free_mtz_fullpath)
   
   RFE_def_file.write(RFE_def_text)
   RFE_def_file.close()
 
-  os.system('iotbx.reflection_file_editor reflection_file_editor.def')
+  print "wrote RFE def file successfully!"
 
-  prepare input pdb file
-      pdbtools
-      cryst1
+  subprocess.call(['iotbx.reflection_file_editor', 'reflection_file_editor.def'])
 
-  cryst1_sg = space_group.rjust(11)
+  # prepare input pdb file
+  #     pdbtools
+  #     cryst1
+
+  cryst1_sg = str(space_group).rjust(10)
   cryst1_line = "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s    \n" % (uc_a, uc_b, uc_c, uc_al, uc_be, uc_ga, space_group)
+  # cryst1_line = "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s    \n" % (unit_cell, space_group)
+  # cryst1_line = "CRYST1%s%s    \n" % (unit_cell,space_group)
 
   orig_pdb_file = open(isomorphous_input_pdb_fullpath, 'r')
   output_pdb_file_fullpath = os.path.join(cwd, "coords_in_current_cell.pdb")
@@ -188,10 +210,10 @@ mtz_file {
 
   output_pdb_file.close()
 
-  pdbtools_cmd = "phenix.pdbtools %s convert_to_isotropic=True set_b_iso=20.00 remove='not protein' output.file_name='coords_in_current_cell.pdb'"
+  pdbtools_cmd = "phenix.pdbtools %s convert_to_isotropic=True set_b_iso=20.00 remove='not protein' output.file_name='coords_in_current_cell.pdb'" % (output_pdb_file_fullpath)
   os.system(pdbtools_cmd)
 
-  phenix_refine_cmd = "phenix.refine %s coords_in_current_cell.pdb strategy=rigid_body" % (output_mtz_file)
+  phenix_refine_cmd = "phenix.refine %s coords_in_current_cell.pdb strategy=rigid_body --space_group %s --unit_cell %s" % (output_mtz_file, space_group, uc_str.replace(" ",""))
   os.system(phenix_refine_cmd)
 
   os.chdir('..')
