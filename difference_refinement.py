@@ -256,7 +256,7 @@ for reflection in common_reflections:
   f_model = float(f_model_as_dict[reflection][0])
   diff_F = excited_F - (ground_F - f_model)
   diff_sigF = sqrt((ground_sigF**2)+(excited_sigF**2))
-  hkl_line = "%s%s%s%s%s\n" %
+  hkl_line = "%4s%4s%4s%8.2f%8.2f\n" % (h_diff, k_diff, l_diff, diff_F, diff_sigF)
   diff_hkl_file.write(hkl_line)
 
 diff_hkl_file.close()
