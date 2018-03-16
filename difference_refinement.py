@@ -235,10 +235,10 @@ for line in excited_SF_as_text.readlines()
 common_reflections = []
 
 for ground_index in list_of_indices_ground:
-  for excited_index in list_of_indices_excited:
-    if (ground_index == excited_index):
-      common_reflections.append(ground_index)
-
+  if ground_index in list_of_indices_excited:
+    common_reflections.append(ground_index)
+#  else:
+#    print ground_index
 
 #calculate difference Fs and write to ascii .hkl file
 
@@ -399,6 +399,7 @@ subprocess.call(['iotbx.reflection_file_editor', 'reflection_file_editor.def'])
 
 #perform difference refinement with phenix.refine (7 macro cycles)
 #I wonder what the optimal parameters are for this refinement. We should find out and make this step more rigorous by creating a full .def file
+#play with weights
 
 difference_refinement_command = "phenix.refine %s ./difference_structure_factors_flags.mtz refinement.main.number_of_macrocycles=7"
 os.system(difference_refinement_command)
