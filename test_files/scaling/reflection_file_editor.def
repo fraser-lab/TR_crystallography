@@ -1,0 +1,66 @@
+show_arrays = False
+dry_run = False
+verbose = True
+mtz_file {
+  crystal_symmetry {
+    unit_cell = 79.52300262451172, 79.52300262451172, 38.233001708984375, 90.0, 90.0, 90.0
+    space_group = 96
+    output_unit_cell = None
+    output_space_group = None
+    change_of_basis = None
+    eliminate_invalid_indices = False
+    expand_to_p1 = False
+    disable_unit_cell_check = True
+    disable_space_group_check = False
+    eliminate_sys_absent = True
+  }
+  d_max = None
+  d_min = None
+  wavelength = None
+  output_file = /mnt/c/Users/mctuc/Documents/GitHub/TR_crystallography/test_diff_ref/scaling/lys_20ns_540uJ_refine_004_I_model_asF.mtz
+  job_title = None
+  resolve_label_conflicts = True
+  exclude_reflection = None
+  miller_array {
+    file_name = /mnt/c/Users/mctuc/Documents/GitHub/TR_crystallography/test_diff_ref/scaling/lys_20ns_540uJ_refine_004_I_model.mtz
+    labels = I,SIGI
+    output_labels = FOBS SIGFOBS
+    column_root_label = None
+    d_min = None
+    d_max = None
+    output_as = auto intensities amplitudes_fw *amplitudes
+    anomalous_data = *Auto merged anomalous
+    force_type = *auto amplitudes intensities
+    scale_max = None
+    scale_factor = None
+    remove_negatives = False
+    massage_intensities = False
+    filter_by_signal_to_noise = None
+    add_b_iso = None
+    add_b_aniso = 0 0 0 0 0 0
+    shuffle_values = False
+    reset_values_to = None
+   } 
+  r_free_flags {
+    generate = False
+    force_generate = False
+    new_label = "FreeR_flag"
+    fraction = 0.1
+    max_free = 2000
+    lattice_symmetry_max_delta = 5
+    use_lattice_symmetry = True
+    use_dataman_shells = False
+    n_shells = 20
+    random_seed = None
+    extend = True
+    old_test_flag_value = None
+    export_for_ccp4 = False
+    preserve_input_values = True
+    warn_if_all_same_value = True
+    adjust_fraction = False
+    d_eps = 0.0001
+    relative_to_complete_set = False
+    remediate_mismatches = False
+  }
+}
+

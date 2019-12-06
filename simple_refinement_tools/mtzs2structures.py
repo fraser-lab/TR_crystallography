@@ -1,7 +1,7 @@
 #Script for copying a set of Rfree flags across multiple isomorphous data sets and
 #perform rigid-body refinement to initiate rebuild.
 #Usage: libtbx.python mtzs2structures.py [isomorphous.pdb] [r_free.mtz]
-#Run from a directory containing all of the derivative MTZ files
+#Run from a directory containing all of the derivative MTZ files and the other inputs (native pdb file and mtz with R-free set)
 
 import os
 import sys

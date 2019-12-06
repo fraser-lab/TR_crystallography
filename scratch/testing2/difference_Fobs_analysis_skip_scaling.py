@@ -1,6 +1,4 @@
 # needs to run with libtbx.python so source your phenix install before running
-# Use a recent nightly build of phenix for functional phenix.scale_and_merge
-# Usage: libtbx.python difference_Fobs_analysis.py ground_state.mtz excited_state.mtz scaling_reference.pdb
 
 import os
 import sys
@@ -97,7 +95,7 @@ mtz_file {
   exclude_reflection = None
   miller_array {
     file_name = %s
-    labels = Iobs,SIGIobs
+    labels = IMEAN,SIGIMEAN
     output_labels = FOBS SIGFOBS
     column_root_label = None
     d_min = None
@@ -146,9 +144,6 @@ mtz_file {
   print "Wrote RFE def file successfully! - Now converting intensities to structure factor amplitudes with RFE."
 
   subprocess.call(['iotbx.reflection_file_editor', 'reflection_file_editor.def'])
-
-  output_mtz_filename = "%s_asF.mtz" % (scaled_structure_factor_mtz_prefix)
-  return output_mtz_filename
 
   print "Conversion to Structure Factors is finished!"
 
@@ -311,12 +306,12 @@ def calculate_Fo_minus_Fo_and_sigma_as_dict( ground_state_F_as_text_fullpath, ex
   common_reflections = identify_common_reflections(ground_state_F_as_dict, excited_state_F_as_dict)
   Fo_minus_Fo_and_sigma_dict = {}
   for miller_index in common_reflections:
-    fobs_1 = float(ground_state_F_as_dict.get(miller_index)[0])
-    sigfobs_1 = float(ground_state_F_as_dict.get(miller_index)[1])
-    fobs_2 = float(excited_state_F_as_dict.get(miller_index)[0])
-    sigfobs_2 = float(excited_state_F_as_dict.get(miller_index)[1])
+    fobs_1 = ground_state_F_as_dict.get(miller_index)[0]
+    sigfobs_1 = ground_state_F_as_dict.get(miller_index)[1]
+    fobs_2 = excited_state_F_as_dict.get(miller_index)[0]
+    sigfobs_2 = excited_state_F_as_dict.get(miller_index)[1]
     f = []
-    Fo_minus_Fo = fobs_2 - fobs_1
+    Fo_minus_Fo = float(fobs_2) - float(fobs_1)
     f.append(Fo_minus_Fo)
     sig_Fo_minus_Fo = sqrt((sigfobs_2**2)+(sigfobs_1**2))
     f.append(sig_Fo_minus_Fo)
@@ -333,9 +328,9 @@ def calculate_Fo_minus_Fo_as_dict( ground_state_F_as_text_fullpath, excited_stat
   common_reflections = identify_common_reflections(ground_state_F_as_dict, excited_state_F_as_dict)
   Fo_minus_Fo_dict = {}
   for miller_index in common_reflections:
-    fobs_1 = float(ground_state_F_as_dict.get(miller_index)[0])
-    fobs_2 = float(excited_state_F_as_dict.get(miller_index)[0])
-    Fo_minus_Fo = fobs_2 - fobs_1
+    fobs_1 = ground_state_F_as_dict.get(miller_index)[0]
+    fobs_2 = excited_state_F_as_dict.get(miller_index)[0]
+    Fo_minus_Fo = float(fobs_2) - float(fobs_1)
     values = {miller_index : Fo_minus_Fo}
     Fo_minus_Fo_dict.update(values)
 
@@ -349,8 +344,8 @@ def calculate_Fo_plus_Fo_as_dict( ground_state_F_as_text_fullpath, excited_state
   common_reflections = identify_common_reflections(ground_state_F_as_dict, excited_state_F_as_dict)
   Fo_plus_Fo_dict = {}
   for miller_index in common_reflections:
-    fobs_1 = float(ground_state_F_as_dict.get(miller_index)[0])
-    fobs_2 = float(excited_state_F_as_dict.get(miller_index)[0])
+    fobs_1 = ground_state_F_as_dict.get(miller_index)[0]
+    fobs_2 = excited_state_F_as_dict.get(miller_index)[0]
     Fo_plus_Fo = float(fobs_2) + float(fobs_1)
     values = {miller_index : Fo_plus_Fo}
     Fo_plus_Fo_dict.update(values)
@@ -387,7 +382,7 @@ def generate_Fo_minus_Fo_histogram( Fo_minus_Fo_dict ):
   Fo_minus_Fo_list = []
   for Fo_minus_Fo in Fo_minus_Fo_dict.itervalues():
     Fo_minus_Fo_list.append(Fo_minus_Fo)
-  plt.hist(Fo_minus_Fo_list, 300) #would be good to change the binning to something better
+  plt.hist(Fo_minus_Fo_list, 100, range=[-100,100])
   plt.savefig("Fo_minus_Fo_histogram.png")
   plt.show()
 
@@ -414,9 +409,9 @@ def main():
   for filename in [ground_state_data_input_filename, excited_state_data_input_filename]:
     copy_unscaled_mtz_to_subdir = "cp ../%s %s" % (filename, temp_dir_path)
     os.system(copy_unscaled_mtz_to_subdir)
-    scaled_I_mtz = scale_intensities_to_I_model(filename, I_model_mtz_filename)
-    scaled_F_mtz = convert_scaled_intensities_to_structure_factors_FandW(scaled_I_mtz)
-    reflection_text_file = convert_mtz_to_text(scaled_F_mtz)
+#    scaled_I_mtz = scale_intensities_to_I_model(filename, I_model_mtz_filename)
+    F_mtz = convert_scaled_intensities_to_structure_factors_FandW(filename)
+    reflection_text_file = convert_mtz_to_text(F_mtz)
     reflection_text_fullpath = os.path.join(temp_dir_path, reflection_text_file)
     reflection_text_files.append(reflection_text_fullpath)
 
