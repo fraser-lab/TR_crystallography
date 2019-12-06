@@ -348,58 +348,86 @@ def calculate_weighted_delta_F_as_dict( ground_state_F_as_text_fullpath, excited
   return weighted_delta_F_as_dict
 
 
-def convert_reflection_dict_to_hkl_file( difference_F_dict, difference_refinement_path, output_prefix ):
+def create_hkl_file( F_dict, hkl_file_path, output_prefix ):
 
-  diff_hkl_filename = "%s_diffSF.hkl" % (output_prefix)
-  diff_hkl_file_fullpath = os.path.join(difference_refinement_path, diff_hkl_filename)
-  diff_hkl_file = open(diff_hkl_file_fullpath, 'w')
+  hkl_filename = "%s.hkl" % (output_prefix)
+  hkl_file_fullpath = os.path.join(hkl_file_path, hkl_filename)
+  hkl_file = open(hkl_file_fullpath, 'w')
 
-  for reflection in difference_F_dict.keys():
-    h_diff = reflection.split(' ')[0]
-    k_diff = reflection.split(' ')[1]
-    l_diff = reflection.split(' ')[2]
-    f_diff = difference_F_dict.get(reflection)[0]
-    sigf_diff = difference_F_dict.get(reflection)[1]
-    hkl_line = "%4s%4s%4s%8.2f%8.2f\n" % (h_diff, k_diff, l_diff, f_diff, sigf_diff)
-    diff_hkl_file.write(hkl_line)
+  for reflection in F_dict.keys():
+    h = reflection.split(' ')[0]
+    k = reflection.split(' ')[1]
+    l = reflection.split(' ')[2]
+    F_hkl = F_dict.get(reflection)[0]
+    sigF_hkl = F_dict.get(reflection)[1]
+    hkl_line = "%4s%4s%4s%8.2f%8.2f\n" % (h, k, l, F_hkl, sigF_hkl)
+    hkl_file.write(hkl_line)
 
-  diff_hkl_file.close()
+  hkl_file.close()
 
-  return diff_hkl_filename
+  return hkl_filename
 
 
-def convert_hkl_to_mtz( diff_hkl_filename, output_prefix ):
+def convert_hkl_to_mtz( hkl_filename, output_prefix ):
 
   working_directory = os.getcwd()
   f2mtz_script_fullpath = os.path.join(working_directory, "f2mtz.sh")
   f2mtz_script = open(f2mtz_script_fullpath, 'w')
 
-  output_mtz_filename = "%s_diffSF.mtz" % (output_prefix)
+  output_mtz_filename = "%s.mtz" % (output_prefix)
 
   f2mtz_command = """#!/bin/sh
   f2mtz hklin %s/%s hklout %s/%s <<EOF
   SYMMETRY 96
+  CELL 79.523  79.523  38.2332 
   LABOUT H  K  L  FOBS  SIGFOBS
   CTYPE  H  H  H  F  Q
+  END
   EOF
-  """ % (working_directory, diff_hkl_filename, working_directory, output_mtz_filename) 
+  """ % (working_directory, hkl_filename, working_directory, output_mtz_filename) 
+
+# CELL SHOULD NOT BE HARD CODED IN FINAL VERSION
 
   f2mtz_script.write(f2mtz_command)
   f2mtz_script.close()
-  os.system("chmod ./f2mtz.sh 755")
+  os.chmod(f2mtz_script_fullpath, 0755)
   os.system("./f2mtz.sh")
 
   return output_mtz_filename
 
 
+def make_maps( mtz_filename, pdb_filename, output_prefix ):
 
-def make_maps( )
+  working_directory = os.getcwd()
 
-#Use phenix.maps
+  pdb_prefix = pdb_filename.split('.')[-2]
+  mtz_prefix = mtz_filename.split('.')[-2]
+  recip_space_arrays_output_filename = pdb_prefix+"_"+mtz_prefix+".mtz"
 
+  recip_space_arrays_command = "phenix.reciprocal_space_arrays %s %s" % (pdb_filename, mtz_filename)
+  os.system(recip_space_arrays_command)
+
+  fft_script_fullpath = os.path.join(working_directory, "fft.sh")
+  fft_script = open(fft_script_fullpath, 'w')
+
+  output_map_filename = "%s.ccp4" % (output_prefix)
+
+  fft_command = """#!/bin/sh
+  fft hklin %s/%s mapout %s/%s <<eof-fft
+  LABIN F1=FOBS PHI=PHIMODEL
+  END
+  eof-fft
+  """ % (working_directory, recip_space_arrays_output_filename, working_directory, output_map_filename) 
+
+  fft_script.write(fft_command)
+  fft_script.close()
+  os.system("chmod ./fft.sh 755")
+  os.system("./fft.sh")
 
 
 def main():
+
+  output_prefix = "weighted_delta_F"
 
   starting_dir = os.getcwd()
   ground_state_data_input_filename = sys.argv[1]
@@ -431,11 +459,8 @@ def main():
 
   weighted_delta_F_dict = calculate_weighted_delta_F_as_dict(reflection_text_files[1], reflection_text_files[0])
 
-  convert_reflection_dict_to_hkl_file() #Need Args
+  hkl_filename = create_hkl_file(weighted_delta_F_dict, starting_dir, output_prefix) #Need Args
+  output_mtz_filename = convert_hkl_to_mtz(hkl_filename, output_prefix)
+  make_maps(output_mtz_filename, pdb_scaling_reference_input_filename, output_prefix)
 
-  convert_hkl_to_mtz()
-
-  make_maps()
-
-
-
+  os.system("rm -r ./temp")
