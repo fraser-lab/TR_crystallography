@@ -341,7 +341,8 @@ def calculate_extrapolated_F_with_weights_as_dict( ground_state_Fobs_as_text_ful
     f = []
     Fo_minus_Fo = fobs_2 - fobs_1
     f.append(Fo_minus_Fo)
-    sum_Fo_minus_Fo = sum_Fo_minus_Fo + Fo_minus_Fo
+    abs_Fo_minus_Fo = abs(Fo_minus_Fo)
+    sum_abs_Fo_minus_Fo = sum_abs_Fo_minus_Fo + abs_Fo_minus_Fo
     sig_Fo_minus_Fo = sqrt((sigfobs_2**2)+(sigfobs_1**2))
     sum_sig_Fo_minus_Fo = sum_sig_Fo_minus_Fo + sig_Fo_minus_Fo
     f.append(sig_Fo_minus_Fo)
@@ -349,7 +350,7 @@ def calculate_extrapolated_F_with_weights_as_dict( ground_state_Fobs_as_text_ful
     Fo_minus_Fo_and_sigma_dict.update(values)
     n_Fo_minus_Fo = n_Fo_minus_Fo + 1.0
 
-  avg_delta_F = sum_Fo_minus_Fo / n_Fo_minus_Fo
+  avg_abs_delta_F = sum_abs_Fo_minus_Fo / n_Fo_minus_Fo
   avg_sig_delta_F = sum_sig_Fo_minus_Fo / n_Fo_minus_Fo
 
   weighted_delta_F_as_dict = {}
@@ -357,8 +358,9 @@ def calculate_extrapolated_F_with_weights_as_dict( ground_state_Fobs_as_text_ful
   for miller_index in Fo_minus_Fo_and_sigma_dict.keys():
     fobs_gr = float(ground_state_F_as_dict.get(miller_index)[0])
     delta_F = float(Fo_minus_Fo_and_sigma_dict.get(miller_index)[0])
+    abs_delta_F = abs(delta_F)
     sig_delta_F = float(Fo_minus_Fo_and_sigma_dict.get(miller_index)[1])
-    weight = 1.0 / (1+ ((sig_delta_F**2)/(avg_sig_delta_F**2)) + (0.05*((delta_F**2)/(avg_delta_F**2))))
+    weight = 1.0 / (1+ ((sig_delta_F**2)/(avg_sig_delta_F**2)) + (0.05*((abs_delta_F**2)/(avg_abs_delta_F**2))))
     weighted_delta_F = weight * delta_F
     N = float(extrapolation_factor)
     e = []
