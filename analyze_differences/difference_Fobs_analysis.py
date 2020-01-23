@@ -360,6 +360,24 @@ def calculate_Fo_plus_Fo_as_dict( ground_state_F_as_text_fullpath, excited_state
   return Fo_plus_Fo_dict
 
 
+def calculate_Z_scores_as_dict( Fo_minus_Fo_dict ):
+
+  delta_F_Z_score_dict = {}
+  for difference in Fo_minus_Fo_dict:
+    miller_index = difference[0]
+    delta_F = float(difference[1])
+    sig_delta_F = float(difference[2])
+    Z_score = abs(delta_F/sig_delta_F)
+    f = []
+    f.append(delta_F)
+    f.append(sig_delta_F)
+    f.append(Z_score)
+    values = {miller_index : f}
+    delta_F_Z_score_dict.update(values)
+
+  return delta_F_Z_score_dict
+
+
 def calculate_Riso( Fo_minus_Fo_dict, Fo_plus_Fo_dict ):
 
   numerator_sum = 0
@@ -377,9 +395,20 @@ def create_Fo_minus_Fo_rank_order_list( cwd, Fo_minus_Fo_dict ):
 
   output_file_path = os.path.join(cwd, "Fo_minus_Fo_rank_order.txt")
   output_file = open(output_file_path, 'w')
-  ranked_Fo_minus_Fo = sorted(Fo_minus_Fo_dict.items(), key=operator.itemgetter(1))
+  ranked_Fo_minus_Fo = sorted(Fo_minus_Fo_dict.items(), abs(key=operator.itemgetter(1)))
   for difference in ranked_Fo_minus_Fo:
     output_line = "%s %s \n" % (difference[0], difference[1])
+    output_file.write(output_line)
+  output_file.close()
+
+
+def create_Z_score_rank_order_list( cwd, delta_F_Z_score_dict ):
+
+  output_file_path = os.path.join(cwd, "Z_score_rank_order.txt")
+  output_file = open(output_file_path, 'w')
+  ranked_by_Z_score = sorted(delta_F_Z_score_dict.items(), key=operator.itemgetter(3))
+  for difference in ranked_Fo_minus_Fo:
+    output_line = "%s %s \n" % (difference[0], difference[1], difference[2], difference[3])
     output_file.write(output_line)
   output_file.close()
 
@@ -426,6 +455,7 @@ def main():
 
   Fo_minus_Fo_dict = calculate_Fo_minus_Fo_as_dict(reflection_text_files[1], reflection_text_files[0])
   Fo_plus_Fo_dict = calculate_Fo_plus_Fo_as_dict(reflection_text_files[1], reflection_text_files[0])
+  delta_F_Z_score_dict = calculate_Z_scores_as_dict(Fo_minus_Fo_dict)
 
   R_iso = calculate_Riso(Fo_minus_Fo_dict, Fo_plus_Fo_dict)
 
@@ -444,6 +474,8 @@ R_iso BETWEEN THE TWO DATA SETS IS %s
 """ % (ground_state_data_input_filename, excited_state_data_input_filename, R_iso)
 
   create_Fo_minus_Fo_rank_order_list(starting_dir, Fo_minus_Fo_dict)
+
+  create_Z_score_rank_order_list(starting_dir, delta_F_Z_score_dict)
 
   generate_Fo_minus_Fo_histogram(Fo_minus_Fo_dict)
 
