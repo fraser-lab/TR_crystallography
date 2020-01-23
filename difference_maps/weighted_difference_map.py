@@ -325,7 +325,7 @@ def calculate_weighted_delta_F_as_dict( ground_state_F_as_text_fullpath, excited
     f.append(Fo_minus_Fo)
     abs_Fo_minus_Fo = abs(Fo_minus_Fo)
     sum_abs_Fo_minus_Fo = sum_abs_Fo_minus_Fo + abs_Fo_minus_Fo
-    sig_Fo_minus_Fo = sqrt((sigfobs_2**2)+(sigfobs_1**2))
+    sig_Fo_minus_Fo = math.sqrt((sigfobs_2**2)+(sigfobs_1**2))
     sum_sig_Fo_minus_Fo = sum_sig_Fo_minus_Fo + sig_Fo_minus_Fo
     f.append(sig_Fo_minus_Fo)
     values = {miller_index : f}

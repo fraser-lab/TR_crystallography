@@ -327,25 +327,20 @@ def calculate_extrapolated_F_as_dict( ground_state_Fobs_as_text_fullpath, excite
   ground_state_Fobs_as_dict = store_Fhkl_from_text_as_dict(ground_state_Fobs_as_text_fullpath)
   excited_state_Fobs_as_dict = store_Fhkl_from_text_as_dict(excited_state_Fobs_as_text_fullpath)
   common_reflections = identify_common_reflections(ground_state_Fobs_as_dict, excited_state_Fobs_as_dict)
-  delta_F_dict = {}
   extrapolated_F_dict = {}
   for miller_index in common_reflections:
     fobs_gr = float(ground_state_Fobs_as_dict.get(miller_index)[0])
+    sig_fobs_gr = float(ground_state_Fobs_as_dict.get(miller_index)[1])
     fobs_ex = float(excited_state_Fobs_as_dict.get(miller_index)[0])
-    f = []
+    sig_f_obs_ex = float(excited_state_Fobs_as_dict.get(miller_index)[1])
     delta_F = fobs_ex - fobs_gr
-    f.append(delta_F)
-    values = {miller_index : f}
-    delta_F_dict.update(values)
-  for miller_index in common_reflections:
-    fobs_gr = float(ground_state_Fobs_as_dict.get(miller_index)[0])
-    delta_F = float(delta_F_dict.get(miller_index)[0])
+    sig_delta_F = math.sqrt(((sig_fobs_gr**2)+(sig_f_obs_ex**2)))
     N = float(extrapolation_factor)
     e = []
     extrap_F = fobs_gr + (N * delta_F)
     e.append(extrap_F)
-    artificial_sigF = math.sqrt(abs(extrap_F)) # phenix.refine does not use sigmas, so a reasonable estimate is fine here
-    e.append(artificial_sigF)
+    sig_extrap_F = math.sqrt(((N**2)*(sig_delta_F**2))+(sig_fobs_gr**2))
+    e.append(sig_extrap_F)
     values = {miller_index : e}
     extrapolated_F_dict.update(values)
 

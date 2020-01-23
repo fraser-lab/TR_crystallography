@@ -327,51 +327,50 @@ def calculate_extrapolated_F_with_weights_as_dict( ground_state_Fobs_as_text_ful
   ground_state_F_as_dict = store_Fhkl_from_text_as_dict(ground_state_F_as_text_fullpath)
   excited_state_F_as_dict = store_Fhkl_from_text_as_dict(excited_state_F_as_text_fullpath)
   common_reflections = identify_common_reflections(ground_state_F_as_dict, excited_state_F_as_dict)
-  Fo_minus_Fo_and_sigma_dict = {}
-  sum_Fo_minus_Fo = 0.0
-  sum_sig_Fo_minus_Fo = 0.0
-  n_Fo_minus_Fo = 0.0
+  delta_F_dict = {}
+  sum_delta_F = 0.0
+  sum_sig_delta_F = 0.0
+  n_delta_F = 0.0
   extrapolated_F_dict = {}
 
   for miller_index in common_reflections:
-    fobs_1 = float(ground_state_F_as_dict.get(miller_index)[0])
-    sigfobs_1 = float(ground_state_F_as_dict.get(miller_index)[1])
-    fobs_2 = float(excited_state_F_as_dict.get(miller_index)[0])
-    sigfobs_2 = float(excited_state_F_as_dict.get(miller_index)[1])
-    f = []
-    Fo_minus_Fo = fobs_2 - fobs_1
-    f.append(Fo_minus_Fo)
-    abs_Fo_minus_Fo = abs(Fo_minus_Fo)
-    sum_abs_Fo_minus_Fo = sum_abs_Fo_minus_Fo + abs_Fo_minus_Fo
-    sig_Fo_minus_Fo = sqrt((sigfobs_2**2)+(sigfobs_1**2))
-    sum_sig_Fo_minus_Fo = sum_sig_Fo_minus_Fo + sig_Fo_minus_Fo
-    f.append(sig_Fo_minus_Fo)
-    values = {miller_index : f}
-    Fo_minus_Fo_and_sigma_dict.update(values)
-    n_Fo_minus_Fo = n_Fo_minus_Fo + 1.0
-
-  avg_abs_delta_F = sum_abs_Fo_minus_Fo / n_Fo_minus_Fo
-  avg_sig_delta_F = sum_sig_Fo_minus_Fo / n_Fo_minus_Fo
-
-  weighted_delta_F_as_dict = {}
-
-  for miller_index in Fo_minus_Fo_and_sigma_dict.keys():
     fobs_gr = float(ground_state_F_as_dict.get(miller_index)[0])
-    delta_F = float(Fo_minus_Fo_and_sigma_dict.get(miller_index)[0])
+    sigfobs_gr = float(ground_state_F_as_dict.get(miller_index)[1])
+    fobs_ex = float(excited_state_F_as_dict.get(miller_index)[0])
+    sigfobs_ex = float(excited_state_F_as_dict.get(miller_index)[1])
+    f = []
+    delta_F = fobs_ex - fobs_gr
+    f.append(delta_F)
     abs_delta_F = abs(delta_F)
-    sig_delta_F = float(Fo_minus_Fo_and_sigma_dict.get(miller_index)[1])
+    sum_abs_delta_F = sum_abs_delta_F + abs_delta_F
+    sig_delta_F = math.sqrt((sigfobs_ex**2)+(sigfobs_gr**2))
+    f.append(sig_delta_F)
+    sum_sig_delta_F = sum_sig_delta_F + sig_delta_F
+    values = {miller_index : f}
+    delta_F_dict.update(values)
+    n_delta_F = n_delta_F + 1.0
+
+  avg_abs_delta_F = sum_abs_delta_F / n_delta_F
+  avg_sig_delta_F = sum_sig_delta_F / n_delta_F
+
+  for miller_index in delta_F_dict.keys():
+    fobs_gr = float(ground_state_F_as_dict.get(miller_index)[0])
+    sigfobs_gr = float(ground_state_F_as_dict.get(miller_index)[1])
+    delta_F = float(delta_F_dict.get(miller_index)[0])
+    abs_delta_F = abs(delta_F)
+    sig_delta_F = float(delta_F_dict.get(miller_index)[1])
     weight = 1.0 / (1+ ((sig_delta_F**2)/(avg_sig_delta_F**2)) + (0.05*((abs_delta_F**2)/(avg_abs_delta_F**2))))
     weighted_delta_F = weight * delta_F
     N = float(extrapolation_factor)
     e = []
     extrap_F = fobs_gr + (N * weighted_delta_F)
     e.append(extrap_F)
-    artificial_sigF = math.sqrt(abs(extrap_F)) # phenix.refine does not use sigmas, so a reasonable estimate is fine here
-    e.append(artificial_sigF)
+    sig_extrap_F = math.sqrt(((N**2)*(weight**2)*(sig_delta_F**2))+(sigfobs_gr**2))
+    e.append(sig_extrap_F)
     values = {miller_index : e}
     extrapolated_F_dict.update(values)
 
-  return weighted_delta_F_as_dict
+  return extrapolated_F_dict
 
 
 def create_hkl_file( F_dict, hkl_file_path, output_prefix ):
