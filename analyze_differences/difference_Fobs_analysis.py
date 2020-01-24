@@ -391,6 +391,19 @@ def calculate_Riso( Fo_minus_Fo_dict, Fo_plus_Fo_dict ):
   return R_iso
 
 
+def Z_score_stats( delta_F_Z_score_dict ):
+
+  Z_score_list = []
+  for difference in delta_F_Z_score_dict:
+    Z_score = float(difference[3])
+    Z_score_list.append(Z_score)
+
+  mean_Z_score = np.mean(Z_score_list)
+  median_Z_score = np.median(Z_score_list)
+
+  return mean_Z_score, median_Z_score
+
+
 def create_Fo_minus_Fo_rank_order_list( cwd, Fo_minus_Fo_dict ):
 
   output_file_path = os.path.join(cwd, "Fo_minus_Fo_rank_order.txt")
@@ -407,7 +420,7 @@ def create_Z_score_rank_order_list( cwd, delta_F_Z_score_dict ):
   output_file_path = os.path.join(cwd, "Z_score_rank_order.txt")
   output_file = open(output_file_path, 'w')
   ranked_by_Z_score = sorted(delta_F_Z_score_dict.items(), key=operator.itemgetter(3))
-  for difference in ranked_Fo_minus_Fo:
+  for difference in ranked_by_Z_score:
     output_line = "%s %s \n" % (difference[0], difference[1], difference[2], difference[3])
     output_file.write(output_line)
   output_file.close()
@@ -459,6 +472,8 @@ def main():
 
   R_iso = calculate_Riso(Fo_minus_Fo_dict, Fo_plus_Fo_dict)
 
+  mean_Z, median_Z = Z_score_stats(delta_F_Z_score_dict)
+
   print """
 
 *******************************************************************************
@@ -469,9 +484,13 @@ Excited state data set: %s
 
 R_iso BETWEEN THE TWO DATA SETS IS %s
 
+Mean Z-score (reflections) : %s
+
+Median Z-score (reflections) : %s
+
 *******************************************************************************
 
-""" % (ground_state_data_input_filename, excited_state_data_input_filename, R_iso)
+""" % (ground_state_data_input_filename, excited_state_data_input_filename, R_iso, mean_Z, median_Z)
 
   create_Fo_minus_Fo_rank_order_list(starting_dir, Fo_minus_Fo_dict)
 
